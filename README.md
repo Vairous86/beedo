@@ -71,3 +71,61 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+# Next.js Project Deployment Guide
+
+This guide explains how to deploy your Next.js project on Vercel, ensuring the Admin page and API route work correctly.
+
+## Folder Structure
+
+Ensure the following structure for the Admin page and API route:
+
+```
+app/
+  admin/
+    page.tsx  # Admin page at /admin
+  api/
+    data/
+      route.ts  # API route at /api/data
+```
+
+## Environment Variables
+
+Set the following environment variables in your Vercel project:
+
+1. **API_KEY** (server-only): Used to protect write operations in the API.
+2. **NEXT_PUBLIC_API_KEY** (optional, client-side): Used for client-side write operations.
+
+### Steps to Set Environment Variables:
+1. Go to your Vercel project dashboard.
+2. Navigate to **Settings > Environment Variables**.
+3. Add the variables:
+   - `API_KEY` (e.g., `my-secure-api-key`)
+   - `NEXT_PUBLIC_API_KEY` (optional, e.g., `my-public-api-key`)
+
+## Deployment Steps
+
+1. Push your code to a Git repository (e.g., GitHub).
+2. Connect your repository to Vercel.
+3. Deploy the project.
+
+## Testing
+
+### Admin Page
+- URL: `https://[your-project].vercel.app/admin`
+- Features:
+  - Fetch data from `/api/data`.
+  - Add, update, and delete items.
+  - Real-time updates every 2 seconds.
+
+### API Route
+- URL: `https://[your-project].vercel.app/api/data`
+- Methods:
+  - **GET**: Fetch all data.
+  - **POST**: Add new data (requires `x-api-key` header).
+  - **PUT**: Update data (requires `x-api-key` header).
+  - **DELETE**: Delete data (requires `x-api-key` header).
+
+## Notes
+- Ensure Vercel KV is enabled for your project.
+- Test the Admin page and API route after deployment to confirm functionality.
