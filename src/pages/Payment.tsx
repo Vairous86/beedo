@@ -21,6 +21,7 @@ import {
   getOrders,
 } from "@/lib/localStorage";
 import { useToast } from "@/hooks/use-toast";
+import { useLocale } from "@/contexts/LocaleContext";
 import {
   ArrowLeft,
   Upload,
@@ -181,24 +182,23 @@ const Payment = () => {
           <section className="py-24 px-4">
             <div className="container mx-auto max-w-2xl text-center">
               <h2 className="text-2xl font-heading font-bold mb-4">
-                No active order
+                {useLocale().t("noActiveOrderTitle")}
               </h2>
               <p className="text-muted-foreground mb-6">
-                It looks like you visited the payment page directly. Please
-                select a service and package first.
+                {useLocale().t("noActiveOrderMsg")}
               </p>
               <div className="flex gap-3 justify-center">
                 <a
                   href="/"
                   className="inline-block px-4 py-2 rounded bg-primary text-primary-foreground"
                 >
-                  Go to Home
+                  {useLocale().t("goHome")}
                 </a>
                 <a
                   href="/"
                   className="inline-block px-4 py-2 rounded border border-border"
                 >
-                  Browse Services
+                  {useLocale().t("browseServices")}
                 </a>
               </div>
             </div>
@@ -222,6 +222,8 @@ const Payment = () => {
       ? orderData.cart.reduce((s, it) => s + (it.price || 0), 0)
       : orderData.price || 0;
 
+  const { t } = useLocale();
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -234,35 +236,39 @@ const Payment = () => {
             className="mb-6 gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t("back")}
           </Button>
 
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-              Complete Your Payment
+              {t("completePayment")}
             </h1>
-            <p className="text-muted-foreground">
-              Choose your preferred payment method below
-            </p>
+            <p className="text-muted-foreground">{t("choosePaymentMethod")}</p>
           </div>
 
           {/* Order Summary */}
           <Card className="gradient-card mb-6 animate-slide-up">
             <CardHeader>
-              <CardTitle className="text-lg">Order Summary</CardTitle>
+              <CardTitle className="text-lg">{t("orderSummary")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Service:</span>
+                  <span className="text-muted-foreground">
+                    {t("serviceLabel")}
+                  </span>
                   <span className="font-medium">{orderData.serviceName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Quantity:</span>
+                  <span className="text-muted-foreground">
+                    {t("quantityLabel")}
+                  </span>
                   <span>{displayUnits.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-border">
-                  <span className="font-heading font-bold">Total Amount:</span>
+                  <span className="font-heading font-bold">
+                    {t("totalAmount")}
+                  </span>
                   <span className="font-heading font-bold text-primary text-lg">
                     {symbol}
                     {displayPrice.toFixed(2)}
@@ -376,10 +382,8 @@ const Payment = () => {
             style={{ animationDelay: "0.2s" }}
           >
             <CardHeader>
-              <CardTitle className="text-lg">Payment Details</CardTitle>
-              <CardDescription>
-                Send the exact amount to the account below
-              </CardDescription>
+              <CardTitle className="text-lg">{t("paymentDetails")}</CardTitle>
+              <CardDescription>{t("paymentDetailsDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-secondary/50 rounded-lg">
@@ -414,7 +418,7 @@ const Payment = () => {
 
               {/* Screenshot Upload */}
               <div className="space-y-2">
-                <Label>Upload Payment Screenshot *</Label>
+                <Label>{t("uploadScreenshot")} *</Label>
                 <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                   <input
                     type="file"
@@ -428,7 +432,7 @@ const Payment = () => {
                       <div className="space-y-2">
                         <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
                         <p className="text-sm text-muted-foreground">
-                          Screenshot uploaded
+                          {t("screenshotUploaded")}
                         </p>
                         <img
                           src={screenshot}
@@ -440,7 +444,7 @@ const Payment = () => {
                       <div className="space-y-2">
                         <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          Click to upload payment screenshot
+                          {t("uploadScreenshot")}
                         </p>
                       </div>
                     )}
@@ -453,7 +457,7 @@ const Payment = () => {
                 disabled={isSubmitting}
                 className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-lg"
               >
-                {isSubmitting ? "Processing..." : "Confirm Payment"}
+                {isSubmitting ? t("processing") : t("confirmPayment")}
               </Button>
             </CardContent>
           </Card>

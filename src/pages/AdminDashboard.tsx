@@ -35,6 +35,7 @@ import {
   setMostRequested,
 } from "@/lib/localStorage";
 import { useToast } from "@/hooks/use-toast";
+import { useLocale } from "@/contexts/LocaleContext";
 import {
   Plus,
   Pencil,
@@ -88,6 +89,7 @@ const AdminDashboard = () => {
   const platforms = getPlatforms();
   const [packages, setPackages] = useState<any[]>([]);
   const [mostRequested, setMostRequestedState] = useState(getMostRequested());
+  const { t } = useLocale();
 
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem("admin_logged_in");
@@ -190,7 +192,9 @@ const AdminDashboard = () => {
     const priceEGP = parseFloat(prompt("Price EGP") || "0");
     const priceUSD = parseFloat(prompt("Price USD") || "0");
     const label = prompt("Optional label (e.g. Recommended)") || "";
-    const visible = confirm("Should this package be visible to customers? OK = Yes")
+    const visible = confirm(
+      "Should this package be visible to customers? OK = Yes"
+    )
       ? true
       : false;
     if (!units || (!priceSAR && !priceEGP && !priceUSD))
@@ -219,7 +223,9 @@ const AdminDashboard = () => {
     const all = getAllPackages();
     const p = all.find((x) => x.id === id);
     if (!p) return;
-    const units = parseInt(prompt("Units", p.units.toString()) || p.units.toString());
+    const units = parseInt(
+      prompt("Units", p.units.toString()) || p.units.toString()
+    );
     const priceSAR = parseFloat(
       prompt("Price SAR", p.price.SAR.toString()) || p.price.SAR.toString()
     );
@@ -332,7 +338,7 @@ const AdminDashboard = () => {
           <Link to="/" className="flex items-center gap-2">
             <ShoppingBag className="w-8 h-8 text-primary" />
             <span className="text-2xl font-heading font-bold text-primary">
-              Admin Panel
+              {t("adminPanel")}
             </span>
           </Link>
           <Button onClick={handleLogout} variant="outline" className="gap-2">
@@ -345,18 +351,22 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="services" className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-4">
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="manage">Manage</TabsTrigger>
+            <TabsTrigger value="services">{t("services")}</TabsTrigger>
+            <TabsTrigger value="orders">{t("orders")}</TabsTrigger>
+            <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
+            <TabsTrigger value="manage">
+              {t("packagesAndMostRequested")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-heading font-bold">Services</h1>
+              <h1 className="text-3xl font-heading font-bold">
+                {t("services")}
+              </h1>
               <Button onClick={openAddDialog} className="gap-2">
                 <Plus className="w-4 h-4" />
-                Add Service
+                {t("addService")}
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -458,7 +468,11 @@ const AdminDashboard = () => {
                       <div className="space-y-2">
                         {packages
                           .filter((p) => p.serviceId === s.id)
-                          .sort((a, b) => (a.orderIndex ?? a.units) - (b.orderIndex ?? b.units))
+                          .sort(
+                            (a, b) =>
+                              (a.orderIndex ?? a.units) -
+                              (b.orderIndex ?? b.units)
+                          )
                           .map((p) => (
                             <div
                               key={p.id}
@@ -470,29 +484,42 @@ const AdminDashboard = () => {
                             >
                               <div>
                                 <div className="font-medium">
-                                  {p.units.toLocaleString()} {" "}
+                                  {p.units.toLocaleString()}{" "}
                                   {p.label ? `— ${p.label}` : ""}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  SAR {p.price.SAR} / EGP {p.price.EGP} / USD {p.price.USD}
+                                  SAR {p.price.SAR} / EGP {p.price.EGP} / USD{" "}
+                                  {p.price.USD}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" onClick={() => handleEditPackage(p.id)}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditPackage(p.id)}
+                                >
                                   Edit
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    updatePackage(p.id, { visible: !p.visible });
-                                    toast({ title: p.visible ? "Hidden" : "Visible" });
+                                    updatePackage(p.id, {
+                                      visible: !p.visible,
+                                    });
+                                    toast({
+                                      title: p.visible ? "Hidden" : "Visible",
+                                    });
                                     loadPackages();
                                   }}
                                 >
                                   {p.visible ? "Hide" : "Show"}
                                 </Button>
-                                <Button variant="destructive" size="icon" onClick={() => handleDeletePackage(p.id)}>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => handleDeletePackage(p.id)}
+                                >
                                   Del
                                 </Button>
                               </div>

@@ -3,9 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { checkAdminCredentials } from "@/lib/localStorage";
 import { useToast } from "@/hooks/use-toast";
+import { useLocale } from "@/contexts/LocaleContext";
 import { Lock, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -14,21 +21,22 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLocale();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (checkAdminCredentials(username, password)) {
       sessionStorage.setItem("admin_logged_in", "true");
       toast({
-        title: "Login Successful",
-        description: "Welcome to the admin dashboard!",
+        title: t("loginSuccessTitle"),
+        description: t("loginSuccessDesc"),
       });
       navigate("/admin/dashboard");
     } else {
       toast({
-        title: "Login Failed",
-        description: "Invalid username or password.",
+        title: t("loginFailedTitle"),
+        description: t("loginFailedDesc"),
         variant: "destructive",
       });
     }
@@ -41,7 +49,7 @@ const AdminLogin = () => {
           <Link to="/" className="inline-flex items-center gap-2 group mb-4">
             <ShoppingBag className="w-10 h-10 text-primary group-hover:scale-110 transition-transform" />
             <span className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              SocialBoost
+              {t("siteTitleShort")}
             </span>
           </Link>
         </div>
@@ -51,15 +59,15 @@ const AdminLogin = () => {
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
               <Lock className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-heading">Admin Login</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the dashboard
-            </CardDescription>
+            <CardTitle className="text-2xl font-heading">
+              {t("adminLoginTitle")}
+            </CardTitle>
+            <CardDescription>{t("adminLoginDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("usernameLabel")}</Label>
                 <Input
                   id="username"
                   type="text"
@@ -71,7 +79,7 @@ const AdminLogin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("passwordLabel")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -82,17 +90,18 @@ const AdminLogin = () => {
                   className="h-11"
                 />
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               >
-                Login
+                {t("login")}
               </Button>
             </form>
 
             <div className="mt-6 p-3 bg-secondary/50 rounded-lg">
               <p className="text-sm text-muted-foreground text-center">
-                <strong>Demo Credentials:</strong><br />
+                <strong>Demo Credentials:</strong>
+                <br />
                 Username: admin | Password: admin123
               </p>
             </div>

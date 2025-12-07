@@ -4,6 +4,7 @@ import { ShoppingBag, Settings, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLocale } from "@/contexts/LocaleContext";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ export const Navbar = () => {
   const { currency, setCurrency } = useCurrency();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { locale, setLocale, t } = useLocale();
 
   // Avoid hydration mismatch from next-themes
   useEffect(() => setMounted(true), []);
@@ -29,7 +31,7 @@ export const Navbar = () => {
           <Link to="/" className="flex items-center gap-2 group">
             <ShoppingBag className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
             <span className="text-2xl font-heading font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              SocialBoost
+              {t("siteTitleShort")}
             </span>
           </Link>
 
@@ -50,7 +52,25 @@ export const Navbar = () => {
                 )}
               </Button>
             )}
-            <Select
+            {/* Language toggle */}
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label={
+                  locale === "ar"
+                    ? "التبديل إلى الإنجليزية"
+                    : "Switch to Arabic"
+                }
+              >
+                <span className="text-sm font-medium">
+                  {locale === "ar" ? "ع" : "EN"}
+                </span>
+              </Button>
+            )}
+            {/* <Select
               value={currency}
               onValueChange={(value) => setCurrency(value as Currency)}
             >
@@ -71,7 +91,7 @@ export const Navbar = () => {
               className="text-muted-foreground hover:text-foreground"
             >
               <Settings className="w-5 h-5" />
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

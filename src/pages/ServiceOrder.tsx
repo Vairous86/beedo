@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLocale } from "@/contexts/LocaleContext";
 import { ArrowLeft, Clock, Shield, CreditCard } from "lucide-react";
 import { z } from "zod";
 
@@ -63,6 +64,8 @@ const ServiceOrder = () => {
   if (!service) {
     return null;
   }
+
+  const { t } = useLocale();
 
   const pricePerThousand = service.prices[currency];
   const selectedPackage = packages.find((p) => p.id === selectedPackageId);
@@ -192,7 +195,7 @@ const ServiceOrder = () => {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="accountUrl">Account / Post URL *</Label>
+                      <Label htmlFor="accountUrl">{t("accountUrlLabel")}</Label>
                       <Input
                         id="accountUrl"
                         type="url"
@@ -216,7 +219,7 @@ const ServiceOrder = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="package">Choose a package *</Label>
+                      <Label htmlFor="package">{t("choosePackage")}</Label>
                       <select
                         id="package"
                         value={selectedPackageId || ""}
@@ -227,24 +230,27 @@ const ServiceOrder = () => {
                       >
                         {packages.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.units.toLocaleString()} {service.serviceType} — {symbol}
-                            {p.price[currency]?.toFixed(2)}{p.label ? ` — ${p.label}` : ""}
+                            {p.units.toLocaleString()} {service.serviceType} —{" "}
+                            {symbol}
+                            {p.price[currency]?.toFixed(2)}
+                            {p.label ? ` — ${p.label}` : ""}
                           </option>
                         ))}
                       </select>
                       {packages.length === 0 && (
                         <p className="text-sm text-muted-foreground">
-                          No predefined packages available for this service.
-                          Admin can add packages in the dashboard.
+                          {t("noPackagesMsg")}
                         </p>
                       )}
                       <p className="text-sm text-muted-foreground">
-                        Price shown is adjusted to your currency.
+                        {t("priceNote")}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="whatsappNumber">WhatsApp Number *</Label>
+                      <Label htmlFor="whatsappNumber">
+                        {t("whatsappLabel")}
+                      </Label>
                       <Input
                         id="whatsappNumber"
                         type="tel"
@@ -269,7 +275,7 @@ const ServiceOrder = () => {
 
                     <div>
                       <Button type="submit" className="w-full h-12 bg-primary">
-                        Proceed to Payment
+                        {t("proceedPayment")}
                       </Button>
                     </div>
                   </form>
