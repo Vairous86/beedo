@@ -31,21 +31,32 @@ export default function DataPage() {
     const body = { title };
     await fetch("/api/data", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": (process.env.NEXT_PUBLIC_API_KEY as string) || "" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": (process.env.NEXT_PUBLIC_API_KEY as string) || "",
+      },
       body: JSON.stringify(body),
     });
     setTitle("");
     load();
   };
 
-  if (error) return <div className="container mx-auto p-6">Error loading data: {error}</div>;
+  if (error)
+    return (
+      <div className="container mx-auto p-6">Error loading data: {error}</div>
+    );
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Data</h1>
 
       <form onSubmit={adding} className="mb-6 flex gap-2">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="border p-2 flex-1" />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="border p-2 flex-1"
+        />
         <button className="px-4 py-2 bg-primary text-white">Add</button>
       </form>
 

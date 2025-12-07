@@ -70,28 +70,7 @@ export const Navbar = () => {
                 </span>
               </Button>
             )}
-            {/* <Select
-              value={currency}
-              onValueChange={(value) => setCurrency(value as Currency)}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SAR">SAR</SelectItem>
-                <SelectItem value="EGP">EGP</SelectItem>
-                <SelectItem value="USD">USD</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/admin")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="w-5 h-5" />
-            </Button> */}
+            {/* country/currency selector and admin buttons removed per request */}
           </div>
         </div>
       </div>
