@@ -29,6 +29,7 @@ import {
   CreditCard,
   Smartphone,
 } from "lucide-react";
+import { fetchPaymentSettings } from "@/lib/db";
 
 interface OrderData {
   serviceId?: string;
@@ -60,9 +61,12 @@ const Payment = () => {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const paymentSettings = getPaymentSettings();
+  const [paymentSettings, setPaymentSettings] = useState(getPaymentSettings());
 
   useEffect(() => {
+    fetchPaymentSettings()
+      .then((s) => setPaymentSettings(s))
+      .catch(() => setPaymentSettings(getPaymentSettings()));
     if (location.state) {
       const data = location.state as OrderData;
       // If cart exists and serviceName not provided, try to fetch name for first item
@@ -385,36 +389,59 @@ const Payment = () => {
               <CardTitle className="text-lg">{t("paymentDetails")}</CardTitle>
               <CardDescription>{t("paymentDetailsDesc")}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-secondary/50 rounded-lg">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">
-                      {paymentMethod === "stcpay"
-                        ? "STC Pay Number:"
-                        : paymentMethod === "alrajhi"
-                        ? "Al Rajhi Account:"
-                        : "Vodafone Cash Number:"}
-                    </span>
-                    <span className="font-mono font-bold text-lg">
-                      {paymentMethod === "stcpay"
-                        ? paymentSettings.stcPayNumber
-                        : paymentMethod === "alrajhi"
-                        ? paymentSettings.alRajhiAccount
-                        : paymentSettings.vodafoneCash}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">
-                      Amount to Send:
-                    </span>
-                    <span className="font-heading font-bold text-primary text-xl">
-                      {symbol}
-                      {displayPrice.toFixed(2)}
-                    </span>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-secondary/50 rounded-lg">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">
+                        {paymentMethod === "stcpay"
+                          ? "STC Pay Number:"
+                          : paymentMethod === "alrajhi"
+                          ? "Al Rajhi Account:"
+                          : "Vodafone Cash Number:"}
+                      </span>
+                      <span className="font-mono font-bold text-lg">
+                        {paymentMethod === "stcpay"
+                          ? paymentSettings.stcPayNumber
+                          : paymentMethod === "alrajhi"
+                          ? paymentSettings.alRajhiAccount
+                          : paymentSettings.vodafoneCash}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">
+                        Amount to Send:
+                      </span>
+                      <span className="font-heading font-bold text-primary text-xl">
+                        {symbol}
+                        {displayPrice.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+                {(() => {
+                  const qr =
+                    paymentMethod === "stcpay"
+                      ? paymentSettings.stcPayQr
+                      : paymentMethod === "alrajhi"
+                      ? paymentSettings.alRajhiQr
+                      : paymentSettings.vodafoneQr;
+                  if (qr) {
+                    return (
+                      <div className="p-4 rounded-lg border border-border text-center">
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Scan QR to pay
+                        </div>
+                        <img
+                          src={qr}
+                          alt="Payment QR"
+                          className="mx-auto max-h-48 rounded"
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
               {/* Screenshot Upload */}
               <div className="space-y-2">

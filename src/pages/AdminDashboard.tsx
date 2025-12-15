@@ -60,6 +60,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchPaymentSettings, savePaymentSettings } from "@/lib/db";
 
 const AdminDashboard = () => {
   const [services, setServices] = useState<Service[]>([]);
@@ -68,6 +69,9 @@ const AdminDashboard = () => {
     stcPayNumber: "",
     alRajhiAccount: "",
     vodafoneCash: "",
+    stcPayQr: "",
+    alRajhiQr: "",
+    vodafoneQr: "",
   });
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,10 +105,15 @@ const AdminDashboard = () => {
     }
   }, [navigate]);
 
-  const loadData = () => {
+  const loadData = async () => {
     setServices(getServices());
     setOrders(getOrders());
-    setPaymentSettings(getPaymentSettings());
+    try {
+      const s = await fetchPaymentSettings();
+      setPaymentSettings(s);
+    } catch {
+      setPaymentSettings(getPaymentSettings());
+    }
   };
   const loadPackages = () => {
     setPackages(getAllPackages());
@@ -311,9 +320,13 @@ const AdminDashboard = () => {
     toast({ title: "Order Updated" });
     loadData();
   };
-  const handlePaymentSettingsUpdate = (e: React.FormEvent) => {
+  const handlePaymentSettingsUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    updatePaymentSettings(paymentSettings);
+    try {
+      await savePaymentSettings(paymentSettings);
+    } catch {
+      updatePaymentSettings(paymentSettings);
+    }
     toast({ title: "Settings Saved" });
   };
 
@@ -649,6 +662,43 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>STC Pay QR</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="stc-qr-upload"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                stcPayQr: reader.result as string,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="stc-qr-upload"
+                        className="cursor-pointer text-sm text-muted-foreground"
+                      >
+                        {paymentSettings.stcPayQr ? "Replace QR" : "Upload QR"}
+                      </label>
+                      {paymentSettings.stcPayQr && (
+                        <img
+                          src={paymentSettings.stcPayQr}
+                          alt="STC Pay QR"
+                          className="mt-3 max-h-32 rounded"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Al Rajhi Account</Label>
                     <Input
                       value={paymentSettings.alRajhiAccount}
@@ -659,6 +709,43 @@ const AdminDashboard = () => {
                         })
                       }
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Al Rajhi QR</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="alrajhi-qr-upload"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                alRajhiQr: reader.result as string,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="alrajhi-qr-upload"
+                        className="cursor-pointer text-sm text-muted-foreground"
+                      >
+                        {paymentSettings.alRajhiQr ? "Replace QR" : "Upload QR"}
+                      </label>
+                      {paymentSettings.alRajhiQr && (
+                        <img
+                          src={paymentSettings.alRajhiQr}
+                          alt="Al Rajhi QR"
+                          className="mt-3 max-h-32 rounded"
+                        />
+                      )}
+                    </div>
                   </div>
                   <h3 className="font-semibold text-sm text-muted-foreground pt-4">
                     Egypt
@@ -674,6 +761,45 @@ const AdminDashboard = () => {
                         })
                       }
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Vodafone Cash QR</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="vodafone-qr-upload"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                vodafoneQr: reader.result as string,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="vodafone-qr-upload"
+                        className="cursor-pointer text-sm text-muted-foreground"
+                      >
+                        {paymentSettings.vodafoneQr
+                          ? "Replace QR"
+                          : "Upload QR"}
+                      </label>
+                      {paymentSettings.vodafoneQr && (
+                        <img
+                          src={paymentSettings.vodafoneQr}
+                          alt="Vodafone Cash QR"
+                          className="mt-3 max-h-32 rounded"
+                        />
+                      )}
+                    </div>
                   </div>
                   <Button type="submit" className="mt-4">
                     Save Settings

@@ -68,6 +68,9 @@ export interface PaymentSettings {
   stcPayNumber: string;
   alRajhiAccount: string;
   vodafoneCash: string;
+  stcPayQr?: string;
+  alRajhiQr?: string;
+  vodafoneQr?: string;
 }
 
 const STORAGE_KEY = "social_media_services";
@@ -369,6 +372,9 @@ const defaultPaymentSettings: PaymentSettings = {
   stcPayNumber: "0500000000",
   alRajhiAccount: "1234567890123456",
   vodafoneCash: "01000000000",
+  stcPayQr: "",
+  alRajhiQr: "",
+  vodafoneQr: "",
 };
 
 export const initializeStorage = () => {
@@ -662,7 +668,11 @@ export const updateOrderStatus = (
 // Payment settings
 export const getPaymentSettings = (): PaymentSettings => {
   const data = localStorage.getItem(PAYMENT_SETTINGS_KEY);
-  return data ? JSON.parse(data) : defaultPaymentSettings;
+  const parsed = data ? JSON.parse(data) : {};
+  return {
+    ...defaultPaymentSettings,
+    ...parsed,
+  } as PaymentSettings;
 };
 
 export const updatePaymentSettings = (settings: PaymentSettings): void => {
