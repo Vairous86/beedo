@@ -1,9 +1,9 @@
-import { supabase } from "./supabaseClient";
 import type { PaymentSettings } from "./localStorage";
 
 export const fetchPaymentSettings = async (): Promise<PaymentSettings> => {
-  const { data } = await supabase.from("payment_settings").select("*");
-  const rows = Array.isArray(data) ? data : [];
+  const res = await fetch("/api/json/payment_settings", { method: "GET" });
+  const json = await res.json();
+  const rows = Array.isArray(json?.data) ? json.data : [];
   const find = (m: string, c: string) =>
     rows.find((r: any) => r.method === m && r.currency === c);
   const stc = find("STC Pay", "SAR");
@@ -22,7 +22,13 @@ export const fetchPaymentSettings = async (): Promise<PaymentSettings> => {
 export const savePaymentSettings = async (
   s: PaymentSettings
 ): Promise<void> => {
-  const payloads = [
+  const payloads: Array<{
+    id?: string;
+    method: string;
+    account_number: string;
+    qr_url: string;
+    currency: string;
+  }> = [
     {
       method: "STC Pay",
       account_number: s.stcPayNumber,
@@ -42,8 +48,25 @@ export const savePaymentSettings = async (
       currency: "EGP",
     },
   ];
-  await supabase.from("payment_settings").upsert(payloads, {
-    onConflict: "method,currency",
-  });
+  const res = await fetch("/api/json/payment_settings", { method: "GET" });
+  const json = await res.json();
+  const rows = Array.isArray(json?.data) ? json.data : [];
+  for (const p of payloads) {
+    const existing = rows.find(
+      (r: any) => r.method === p.method && r.currency === p.currency
+    );
+    if (existing) {
+      await fetch("/api/json/payment_settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: existing.id, ...p }),
+      });
+    } else {
+      await fetch("/api/json/payment_settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(p),
+      });
+    }
+  }
 };
-
