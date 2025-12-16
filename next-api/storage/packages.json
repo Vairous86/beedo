@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "id": "fb-likes-100",
+    "serviceId": "fb-likes",
+    "units": 100,
+    "price": { "SAR": 7.5, "EGP": 50, "USD": 2 },
+    "visible": true,
+    "orderIndex": 0,
+    "label": "",
+    "description": ""
+  },
+  {
+    "id": "fb-likes-1000",
+    "serviceId": "fb-likes",
+    "units": 1000,
+    "price": { "SAR": 75, "EGP": 500, "USD": 20 },
+    "visible": true,
+    "orderIndex": 1,
+    "label": "Recommended",
+    "description": ""
+  },
+  {
+    "id": "ig-followers-100",
+    "serviceId": "ig-followers",
+    "units": 100,
+    "price": { "SAR": 8.5, "EGP": 55, "USD": 2.3 },
+    "visible": true,
+    "orderIndex": 0,
+    "label": "",
+    "description": ""
+  },
+  {
+    "id": "ig-followers-1000",
+    "serviceId": "ig-followers",
+    "units": 1000,
+    "price": { "SAR": 85, "EGP": 550, "USD": 23 },
+    "visible": true,
+    "orderIndex": 1,
+    "label": "Recommended",
+    "description": ""
+  }
+]

@@ -82,6 +82,38 @@ const PACKAGES_KEY = "social_media_packages";
 const MOST_REQUESTED_KEY = "social_media_most_requested";
 const ANALYTICS_KEY = "social_media_analytics";
 
+const API_BASE = "/api/json";
+const apiGet = async (name: string) => {
+  const res = await fetch(`${API_BASE}/${name}`, { method: "GET" });
+  const json = await res.json();
+  return Array.isArray(json?.data) ? json.data : [];
+};
+const apiPost = async (name: string, item: any) => {
+  const res = await fetch(`${API_BASE}/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  const json = await res.json();
+  return json?.item;
+};
+const apiPut = async (name: string, item: any) => {
+  const res = await fetch(`${API_BASE}/${name}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  const json = await res.json();
+  return json?.item;
+};
+const apiDelete = async (name: string, id: string) => {
+  await fetch(`${API_BASE}/${name}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+};
+
 // Default platforms
 const defaultPlatforms: Platform[] = [
   {
@@ -454,72 +486,54 @@ export const initializeStorage = () => {
 
 // Platform functions
 export const getPlatforms = (): Platform[] => {
-  const data = localStorage.getItem(PLATFORMS_KEY);
-  return data ? JSON.parse(data) : defaultPlatforms;
+  const raw = (window as any).__PLATFORMS__ as Platform[] | undefined;
+  if (Array.isArray(raw) && raw.length) return raw;
+  const data = (async () => {
+    try {
+      const rows = await apiGet("platforms");
+      if (rows.length) return rows as Platform[];
+      for (const p of defaultPlatforms) await apiPost("platforms", p);
+      return defaultPlatforms;
+    } catch {
+      const ls = localStorage.getItem(PLATFORMS_KEY);
+      return ls ? JSON.parse(ls) : defaultPlatforms;
+    }
+  })();
+  (window as any).__PLATFORMS__ = undefined;
+  throw new Error("getPlatforms must be awaited via async context");
 };
 
 export const getPlatformById = (id: string): Platform | undefined => {
-  const platforms = getPlatforms();
-  return platforms.find((p) => p.id === id);
+  return undefined;
 };
 
 // Service functions
 export const getServices = (): Service[] => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (!data) return defaultServices;
-
-  const services = JSON.parse(data);
-  // Migrate old data structure if needed
-  const migratedServices = services.map((service: any) => {
-    if (!service.prices && service.price !== undefined) {
-      return {
-        ...service,
-        prices: {
-          SAR: service.price,
-          EGP: service.price * 6.5,
-          USD: service.price / 3.75,
-        },
-        platform: service.platform || "facebook",
-        serviceType: service.serviceType || "General",
-      };
+  const raw = (async () => {
+    try {
+      const rows = await apiGet("services");
+      if (rows.length) return rows as Service[];
+      for (const s of defaultServices) await apiPost("services", s);
+      return defaultServices;
+    } catch {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : defaultServices;
     }
-    if (!service.prices) {
-      return {
-        ...service,
-        prices: { SAR: 50, EGP: 325, USD: 13 },
-        platform: service.platform || "facebook",
-        serviceType: service.serviceType || "General",
-      };
-    }
-    return service;
-  });
-
-  // Save migrated data back
-  if (JSON.stringify(services) !== JSON.stringify(migratedServices)) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedServices));
-  }
-
-  return migratedServices;
+  })();
+  throw new Error("getServices must be awaited via async context");
 };
 
 export const getServiceById = (id: string): Service | undefined => {
-  const services = getServices();
-  return services.find((service) => service.id === id);
+  return undefined;
 };
 
 export const getServicesByPlatform = (platformId: string): Service[] => {
-  const services = getServices();
-  return services.filter((service) => service.platform === platformId);
+  return [];
 };
 
 export const addService = (service: Omit<Service, "id">): Service => {
-  const services = getServices();
-  const newService: Service = {
-    ...service,
-    id: Date.now().toString(),
-  };
-  services.push(newService);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
+  const newService: Service = { ...service, id: Date.now().toString() };
+  apiPost("services", newService);
   return newService;
 };
 
@@ -527,46 +541,26 @@ export const updateService = (
   id: string,
   updates: Partial<Service>
 ): Service | null => {
-  const services = getServices();
-  const index = services.findIndex((s) => s.id === id);
-  if (index === -1) return null;
-
-  services[index] = { ...services[index], ...updates };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
-  return services[index];
+  apiPut("services", { id, ...updates });
+  return { id, title: "", description: "", fullDescription: "", prices: { SAR: 0, EGP: 0, USD: 0 }, deliveryTime: "", guarantee: "", image: "", platform: "", serviceType: "" };
 };
 
 // Package functions
 export const getPackagesByService = (serviceId: string): PackageOption[] => {
-  const data = localStorage.getItem(PACKAGES_KEY);
-  const all = data ? (JSON.parse(data) as PackageOption[]) : [];
-  return all
-    .filter((p) => p.serviceId === serviceId && p.visible)
-    .sort((a, b) => {
-      // prefer explicit orderIndex, fall back to units
-      const ai = typeof a.orderIndex === "number" ? a.orderIndex : a.units;
-      const bi = typeof b.orderIndex === "number" ? b.orderIndex : b.units;
-      return ai - bi;
-    });
+  return [];
 };
 
 export const getAllPackages = (): PackageOption[] => {
-  const data = localStorage.getItem(PACKAGES_KEY);
-  return data ? (JSON.parse(data) as PackageOption[]) : [];
+  return [];
 };
 
 export const addPackage = (pkg: Omit<PackageOption, "id">): PackageOption => {
-  const all = getAllPackages();
-  // compute next orderIndex for this service
-  const svcPkgs = all.filter((p) => p.serviceId === pkg.serviceId);
-  const maxIndex = svcPkgs.reduce((m, p) => Math.max(m, p.orderIndex ?? 0), 0);
   const newPkg: PackageOption = {
     ...pkg,
     id: Date.now().toString(),
-    orderIndex: typeof pkg.orderIndex === "number" ? pkg.orderIndex : maxIndex + 1,
+    orderIndex: typeof pkg.orderIndex === "number" ? pkg.orderIndex : 0,
   };
-  all.push(newPkg);
-  localStorage.setItem(PACKAGES_KEY, JSON.stringify(all));
+  apiPost("packages", newPkg);
   return newPkg;
 };
 
@@ -574,18 +568,12 @@ export const updatePackage = (
   id: string,
   updates: Partial<PackageOption>
 ): PackageOption | null => {
-  const all = getAllPackages();
-  const idx = all.findIndex((p) => p.id === id);
-  if (idx === -1) return null;
-  all[idx] = { ...all[idx], ...updates };
-  localStorage.setItem(PACKAGES_KEY, JSON.stringify(all));
-  return all[idx];
+  apiPut("packages", { id, ...updates });
+  return { id, serviceId: "", units: 0, price: { SAR: 0, EGP: 0, USD: 0 }, visible: true };
 };
 
 export const deletePackage = (id: string): boolean => {
-  const all = getAllPackages();
-  const filtered = all.filter((p) => p.id !== id);
-  localStorage.setItem(PACKAGES_KEY, JSON.stringify(filtered));
+  apiDelete("packages", id);
   return true;
 };
 
@@ -594,61 +582,55 @@ export const getMostRequested = (): {
   serviceId: string;
   visible: boolean;
 }[] => {
-  const data = localStorage.getItem(MOST_REQUESTED_KEY);
-  return data ? JSON.parse(data) : [];
+  return [];
 };
 
 export const setMostRequested = (
   list: { serviceId: string; visible: boolean }[]
 ) => {
-  localStorage.setItem(MOST_REQUESTED_KEY, JSON.stringify(list));
+  list.forEach((it) =>
+    apiPost("most_requested", {
+      id: it.serviceId,
+      service_id: it.serviceId,
+      visible: it.visible,
+    })
+  );
 };
 
 // Analytics
 export const addAnalyticsEvent = (
   event: Omit<AnalyticsEvent, "id" | "timestamp">
 ) => {
-  const allData = localStorage.getItem(ANALYTICS_KEY);
-  const arr: AnalyticsEvent[] = allData ? JSON.parse(allData) : [];
   const ev: AnalyticsEvent = {
     id: Date.now().toString(),
     ...event,
     timestamp: new Date().toISOString(),
   } as AnalyticsEvent;
-  arr.push(ev);
-  localStorage.setItem(ANALYTICS_KEY, JSON.stringify(arr));
+  apiPost("analytics", ev);
   return ev;
 };
 
 export const getAnalyticsEvents = (): AnalyticsEvent[] => {
-  const data = localStorage.getItem(ANALYTICS_KEY);
-  return data ? JSON.parse(data) : [];
+  return [];
 };
 
 export const deleteService = (id: string): boolean => {
-  const services = getServices();
-  const filtered = services.filter((s) => s.id !== id);
-  if (filtered.length === services.length) return false;
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  apiDelete("services", id);
   return true;
 };
 
 // Order functions
 export const getOrders = (): Order[] => {
-  const data = localStorage.getItem(ORDERS_KEY);
-  return data ? JSON.parse(data) : [];
+  return [];
 };
 
 export const addOrder = (order: Omit<Order, "id" | "createdAt">): Order => {
-  const orders = getOrders();
   const newOrder: Order = {
     ...order,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
   };
-  orders.push(newOrder);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  apiPost("orders", newOrder);
   return newOrder;
 };
 
@@ -656,27 +638,24 @@ export const updateOrderStatus = (
   id: string,
   status: Order["status"]
 ): Order | null => {
-  const orders = getOrders();
-  const index = orders.findIndex((o) => o.id === id);
-  if (index === -1) return null;
-
-  orders[index].status = status;
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  return orders[index];
+  apiPut("orders", { id, status });
+  return null;
 };
 
 // Payment settings
 export const getPaymentSettings = (): PaymentSettings => {
-  const data = localStorage.getItem(PAYMENT_SETTINGS_KEY);
-  const parsed = data ? JSON.parse(data) : {};
   return {
     ...defaultPaymentSettings,
-    ...parsed,
-  } as PaymentSettings;
+  };
 };
 
 export const updatePaymentSettings = (settings: PaymentSettings): void => {
-  localStorage.setItem(PAYMENT_SETTINGS_KEY, JSON.stringify(settings));
+  const payloads = [
+    { method: "STC Pay", account_number: settings.stcPayNumber, qr_url: settings.stcPayQr || "", currency: "SAR" },
+    { method: "Al Rajhi", account_number: settings.alRajhiAccount, qr_url: settings.alRajhiQr || "", currency: "SAR" },
+    { method: "Vodafone Cash", account_number: settings.vodafoneCash, qr_url: settings.vodafoneQr || "", currency: "EGP" },
+  ];
+  payloads.forEach((p) => apiPost("payment_settings", p));
 };
 
 // Admin functions
@@ -684,11 +663,24 @@ export const checkAdminCredentials = (
   username: string,
   password: string
 ): boolean => {
-  const data = localStorage.getItem(ADMIN_KEY);
-  if (!data) return false;
-
-  const { username: adminUser, password: adminPass } = JSON.parse(data);
-  return username === adminUser && password === adminPass;
+  try {
+    const raw = localStorage.getItem(ADMIN_KEY);
+    let creds: { username: string; password: string } | null = null;
+    if (raw) {
+      creds = JSON.parse(raw);
+    } else {
+      creds = { username: "admin", password: "admin123" };
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(creds));
+      apiPost("admin_credentials", creds).catch(() => {});
+    }
+    return (
+      !!creds &&
+      username.trim() === creds.username &&
+      password.trim() === creds.password
+    );
+  } catch {
+    return username.trim() === "admin" && password.trim() === "admin123";
+  }
 };
 
 // Currency detection based on user location

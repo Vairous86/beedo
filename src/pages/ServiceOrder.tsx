@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import {
-  Service,
-  getServiceById,
-  initializeStorage,
-  getPackagesByService,
-  addAnalyticsEvent,
-} from "@/lib/localStorage";
+import { Service } from "@/lib/localStorage";
+import { getServices as fetchServices, getAllPackages as fetchAllPackages, addAnalytics } from "@/lib/db";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,18 +42,25 @@ const ServiceOrder = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    initializeStorage();
-    if (serviceId) {
-      const serviceData = getServiceById(serviceId);
-      if (serviceData) {
-        setService(serviceData);
-        setPackages(getPackagesByService(serviceData.id));
-        const pk = getPackagesByService(serviceData.id)[0];
+    const load = async () => {
+      if (!serviceId) return navigate("/");
+      try {
+        const svcRes = await fetchServices();
+        const svcArr = Array.isArray(svcRes?.data) ? (svcRes.data as Service[]) : [];
+        const s = svcArr.find((x) => x.id === serviceId);
+        if (!s) return navigate("/");
+        setService(s);
+        const pkgRes = await fetchAllPackages();
+        const pkgArr = Array.isArray(pkgRes?.data) ? (pkgRes.data as any[]) : [];
+        const list = pkgArr.filter((p) => p.serviceId === s.id);
+        setPackages(list);
+        const pk = list[0];
         if (pk) setSelectedPackageId(pk.id);
-      } else {
+      } catch {
         navigate("/");
       }
-    }
+    };
+    load();
   }, [serviceId, navigate]);
 
   if (!service) {
@@ -99,11 +101,7 @@ const ServiceOrder = () => {
           units: selectedPackage.units,
           price: selectedPackage.price[currency],
         };
-        addAnalyticsEvent({
-          type: "add_to_cart",
-          serviceId: service.id,
-          meta: item,
-        });
+        addAnalytics({ type: "add_to_cart", serviceId: service.id, meta: item } as any);
         navigate("/payment", {
           state: {
             serviceId: service.id,

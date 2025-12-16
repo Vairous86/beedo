@@ -13,27 +13,23 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Service, Order, PaymentSettings, Platform } from "@/lib/localStorage";
 import {
-  Service,
-  Order,
-  PaymentSettings,
-  getServices,
-  addService,
-  updateService,
-  deleteService,
-  getOrders,
-  updateOrderStatus,
-  getPaymentSettings,
-  updatePaymentSettings,
-  getPlatforms,
-  getAllPackages,
-  getPackagesByService,
-  addPackage,
-  updatePackage,
-  deletePackage,
-  getMostRequested,
-  setMostRequested,
-} from "@/lib/localStorage";
+  getServices as fetchServices,
+  addService as createService,
+  updateService as editService,
+  deleteService as removeService,
+  getAllPackages as fetchAllPackages,
+  addPackage as createPackage,
+  updatePackage as editPackage,
+  deletePackage as removePackage,
+  getMostRequested as fetchMostRequested,
+  upsertMostRequested,
+  getPlatforms as fetchPlatforms,
+  fetchPaymentSettings,
+  savePaymentSettings,
+  updateOrderStatus as updateOrderStatusApi,
+} from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useLocale } from "@/contexts/LocaleContext";
 import {
@@ -60,7 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchPaymentSettings, savePaymentSettings } from "@/lib/db";
+import { fetchPaymentSettings as fetchPaymentSettingsAlias, savePaymentSettings as savePaymentSettingsAlias } from "@/lib/db";
 
 const AdminDashboard = () => {
   const [services, setServices] = useState<Service[]>([]);
@@ -90,9 +86,9 @@ const AdminDashboard = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const platforms = getPlatforms();
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
-  const [mostRequested, setMostRequestedState] = useState(getMostRequested());
+  const [mostRequested, setMostRequestedState] = useState<{ serviceId: string; visible: boolean }[]>([]);
   const { t } = useLocale();
 
   useEffect(() => {
@@ -106,18 +102,73 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const loadData = async () => {
-    setServices(getServices());
-    setOrders(getOrders());
     try {
-      const s = await fetchPaymentSettings();
+      const platRes = await fetchPlatforms();
+      const platArr = Array.isArray(platRes?.data) ? (platRes.data as Platform[]) : [];
+      setPlatforms(platArr);
+    } catch {}
+    try {
+      const svcRes = await fetchServices();
+      const svcArr = Array.isArray(svcRes?.data) ? (svcRes.data as Service[]) : [];
+      setServices(svcArr);
+    } catch {
+      setServices([]);
+    }
+    try {
+      const res = await fetch("/api/json/orders");
+      const json = await res.json();
+      const arr = Array.isArray(json?.data) ? (json.data as any[]) : [];
+      setOrders(
+        arr.map((o) => ({
+          id: o.id,
+          serviceId: o.service_id || o.serviceId,
+          serviceName: o.service_name || o.serviceName,
+          platform: o.platform,
+          accountUrl: o.account_url || o.accountUrl,
+          quantity: o.quantity,
+          whatsappNumber: o.whatsapp_number || o.whatsappNumber,
+          price: o.price,
+          currency: o.currency,
+          paymentMethod: o.payment_method || o.paymentMethod,
+          paymentScreenshot: o.payment_screenshot || o.paymentScreenshot,
+          status: o.status,
+          createdAt: o.created_at || o.createdAt,
+        }))
+      );
+    } catch {
+      setOrders([]);
+    }
+    try {
+      const s = await fetchPaymentSettingsAlias();
       setPaymentSettings(s);
     } catch {
-      setPaymentSettings(getPaymentSettings());
+      setPaymentSettings({
+        stcPayNumber: "",
+        alRajhiAccount: "",
+        vodafoneCash: "",
+        stcPayQr: "",
+        alRajhiQr: "",
+        vodafoneQr: "",
+      });
     }
   };
-  const loadPackages = () => {
-    setPackages(getAllPackages());
-    setMostRequestedState(getMostRequested());
+  const loadPackages = async () => {
+    try {
+      const pkgRes = await fetchAllPackages();
+      const pkgArr = Array.isArray(pkgRes?.data) ? pkgRes.data : [];
+      setPackages(pkgArr);
+    } catch {
+      setPackages([]);
+    }
+    try {
+      const mostRes = await fetchMostRequested();
+      const rows = Array.isArray(mostRes?.data) ? mostRes.data : [];
+      setMostRequestedState(
+        rows.map((r: any) => ({ serviceId: r.service_id || r.id, visible: !!r.visible }))
+      );
+    } catch {
+      setMostRequestedState([]);
+    }
   };
   const handleLogout = () => {
     sessionStorage.removeItem("admin_logged_in");
@@ -178,10 +229,10 @@ const AdminDashboard = () => {
       serviceType: formData.serviceType,
     };
     if (editingService) {
-      updateService(editingService.id, serviceData);
+      editService(editingService.id, serviceData as any);
       toast({ title: "Service Updated" });
     } else {
-      addService(serviceData);
+      createService(serviceData as any);
       toast({ title: "Service Added" });
     }
     setDialogOpen(false);
@@ -190,7 +241,7 @@ const AdminDashboard = () => {
 
   const handleDelete = (id: string) => {
     if (window.confirm("Delete this service?")) {
-      deleteService(id);
+      removeService(id);
       toast({ title: "Deleted" });
       loadData();
     }
@@ -208,7 +259,7 @@ const AdminDashboard = () => {
       : false;
     if (!units || (!priceSAR && !priceEGP && !priceUSD))
       return toast({ title: "Invalid input" });
-    addPackage({
+    createPackage({
       serviceId,
       units,
       price: { SAR: priceSAR, EGP: priceEGP, USD: priceUSD },
@@ -222,14 +273,14 @@ const AdminDashboard = () => {
 
   const handleDeletePackage = (id: string) => {
     if (window.confirm("Delete this package?")) {
-      deletePackage(id);
+      removePackage(id);
       toast({ title: "Package deleted" });
       loadPackages();
     }
   };
 
   const handleEditPackage = (id: string) => {
-    const all = getAllPackages();
+    const all = packages;
     const p = all.find((x) => x.id === id);
     if (!p) return;
     const units = parseInt(
@@ -246,7 +297,7 @@ const AdminDashboard = () => {
     );
     const label = prompt("Optional label", p.label || "") || "";
     const visible = confirm("Visible to customers? OK = Yes") ? true : false;
-    updatePackage(id, {
+    editPackage(id, {
       units,
       price: { SAR: priceSAR, EGP: priceEGP, USD: priceUSD },
       label,
@@ -266,15 +317,15 @@ const AdminDashboard = () => {
     e.preventDefault();
     const draggedId = e.dataTransfer.getData("text/plain");
     if (!draggedId || draggedId === targetId) return;
-    const all = getAllPackages();
+    const all = packages;
     const dragged = all.find((x) => x.id === draggedId);
     const target = all.find((x) => x.id === targetId);
     if (!dragged || !target) return;
     // swap orderIndex
     const di = dragged.orderIndex ?? dragged.units;
     const ti = target.orderIndex ?? target.units;
-    updatePackage(dragged.id, { orderIndex: ti });
-    updatePackage(target.id, { orderIndex: di });
+    editPackage(dragged.id, { orderIndex: ti } as any);
+    editPackage(target.id, { orderIndex: di } as any);
     toast({ title: "Package order updated" });
     loadPackages();
   };
@@ -284,48 +335,50 @@ const AdminDashboard = () => {
   };
 
   const movePackage = (id: string, dir: number) => {
-    const all = getAllPackages().filter((p) => p.serviceId === id || true);
+    const all = packages.filter((p: any) => p.serviceId === id || true);
     // For simplicity, operate on the service-specific list when invoked via buttons below
   };
 
   const handleToggleMost = (serviceId: string) => {
-    const list = getMostRequested();
+    const list = [...mostRequested];
     const found = list.find((l) => l.serviceId === serviceId);
     if (found) {
       found.visible = !found.visible;
     } else {
       list.push({ serviceId, visible: true });
     }
-    setMostRequested(list);
     setMostRequestedState(list);
+    upsertMostRequested([{ service_id: serviceId, visible: !!list.find((l) => l.serviceId === serviceId)?.visible }]);
     toast({ title: "Most Requested updated" });
   };
 
   const moveMost = (index: number, dir: number) => {
-    const list = [...getMostRequested()];
+    const list = [...mostRequested];
     const newIndex = index + dir;
     if (newIndex < 0 || newIndex >= list.length) return;
     const tmp = list[newIndex];
     list[newIndex] = list[index];
     list[index] = tmp;
-    setMostRequested(list);
     setMostRequestedState(list);
+    upsertMostRequested(
+      list.map((it) => ({ service_id: it.serviceId, visible: it.visible }))
+    );
     toast({ title: "Order updated" });
   };
   const handleOrderStatusChange = (
     orderId: string,
     status: Order["status"]
   ) => {
-    updateOrderStatus(orderId, status);
+    updateOrderStatusApi(orderId, status);
     toast({ title: "Order Updated" });
     loadData();
   };
   const handlePaymentSettingsUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await savePaymentSettings(paymentSettings);
+      await savePaymentSettingsAlias(paymentSettings);
     } catch {
-      updatePaymentSettings(paymentSettings);
+      // Fallback handled in db.ts savePaymentSettings
     }
     toast({ title: "Settings Saved" });
   };
@@ -517,9 +570,9 @@ const AdminDashboard = () => {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    updatePackage(p.id, {
+                                    editPackage(p.id, {
                                       visible: !p.visible,
-                                    });
+                                    } as any);
                                     toast({
                                       title: p.visible ? "Hidden" : "Visible",
                                     });

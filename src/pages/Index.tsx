@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { PlatformCard } from "@/components/PlatformCard";
+import { Platform, Service } from "@/lib/localStorage";
 import {
-  Platform,
-  getPlatforms,
-  initializeStorage,
-  getMostRequested,
-  getServiceById,
-} from "@/lib/localStorage";
+  getPlatforms as fetchPlatforms,
+  getMostRequested as fetchMostRequested,
+  getServices as fetchServices,
+} from "@/lib/db";
 import { Input } from "@/components/ui/input";
 import { Search, Shield, Clock, Award, Headphones } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -17,10 +16,24 @@ import { Card } from "@/components/ui/card";
 const Index = () => {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [most, setMost] = useState<Array<{ service_id: string; visible: boolean }>>([]);
+  const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
-    initializeStorage();
-    setPlatforms(getPlatforms());
+    const load = async () => {
+      const platRes = await fetchPlatforms();
+      const platArr = Array.isArray(platRes?.data) ? (platRes.data as Platform[]) : [];
+      setPlatforms(platArr);
+      const mostRes = await fetchMostRequested();
+      const mostArr = Array.isArray(mostRes?.data)
+        ? (mostRes.data as Array<{ service_id: string; visible: boolean }>)
+        : [];
+      setMost(mostArr);
+      const svcRes = await fetchServices();
+      const svcArr = Array.isArray(svcRes?.data) ? (svcRes.data as Service[]) : [];
+      setServices(svcArr);
+    };
+    load();
   }, []);
 
   const filteredPlatforms = platforms.filter(
@@ -67,10 +80,10 @@ const Index = () => {
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
-              {getMostRequested()
+              {most
                 .slice(0, 6)
                 .map((m) => {
-                  const s = getServiceById(m.serviceId);
+                  const s = services.find((x) => x.id === (m as any).service_id);
                   if (!s || !m.visible) return null;
                   return (
                     <Link key={s.id} to={`/service/${s.id}`} className="block">

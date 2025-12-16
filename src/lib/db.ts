@@ -1,4 +1,9 @@
-import type { PaymentSettings } from "./localStorage";
+import type { PaymentSettings, Service, Platform, PackageOption, Order, AnalyticsEvent } from "./localStorage";
+
+const resJson = async (res: Response) => {
+  const j = await res.json();
+  return j;
+};
 
 export const fetchPaymentSettings = async (): Promise<PaymentSettings> => {
   const res = await fetch("/api/json/payment_settings", { method: "GET" });
@@ -70,3 +75,130 @@ export const savePaymentSettings = async (
     }
   }
 };
+
+export async function getPlatforms() {
+  const res = await fetch("/api/json/platforms");
+  return await resJson(res);
+}
+
+export async function addPlatform(payload: any) {
+  const res = await fetch("/api/json/platforms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return await resJson(res);
+}
+
+export async function getServices() {
+  const res = await fetch("/api/json/services");
+  return await resJson(res);
+}
+
+export async function addService(payload: Omit<Service, "id">) {
+  const res = await fetch("/api/json/services", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload }),
+  });
+  return await resJson(res);
+}
+
+export async function updateService(id: string, updates: Partial<Service>) {
+  const res = await fetch("/api/json/services", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, ...updates }),
+  });
+  return await resJson(res);
+}
+
+export async function deleteService(id: string) {
+  const res = await fetch("/api/json/services", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  return await resJson(res);
+}
+
+export async function getAllPackages() {
+  const res = await fetch("/api/json/packages");
+  return await resJson(res);
+}
+
+export async function addPackage(pkg: Omit<PackageOption, "id">) {
+  const res = await fetch("/api/json/packages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...pkg }),
+  });
+  return await resJson(res);
+}
+
+export async function updatePackage(id: string, updates: Partial<PackageOption>) {
+  const res = await fetch("/api/json/packages", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, ...updates }),
+  });
+  return await resJson(res);
+}
+
+export async function deletePackage(id: string) {
+  const res = await fetch("/api/json/packages", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  return await resJson(res);
+}
+
+export async function getMostRequested() {
+  const res = await fetch("/api/json/most_requested");
+  return await resJson(res);
+}
+
+export async function upsertMostRequested(items: { service_id: string; visible: boolean; position?: number }[]) {
+  for (const it of items) {
+    await fetch("/api/json/most_requested", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...it, id: it.service_id }),
+    });
+  }
+}
+
+export async function getOrdersByUser(userId: string) {
+  const res = await fetch("/api/json/orders");
+  const json = await resJson(res);
+  const arr = Array.isArray(json?.data) ? json.data : [];
+  return { data: arr.filter((o: any) => o.user_id === userId) };
+}
+
+export async function addOrder(order: Omit<Order, "id" | "createdAt">) {
+  const res = await fetch("/api/json/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(order),
+  });
+  return await resJson(res);
+}
+
+export async function updateOrderStatus(id: string, status: Order["status"]) {
+  const res = await fetch("/api/json/orders", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, status }),
+  });
+  return await resJson(res);
+}
+
+export async function addAnalytics(event: Omit<AnalyticsEvent, "id" | "timestamp">) {
+  const res = await fetch("/api/json/analytics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+  });
+  return await resJson(res);
+}

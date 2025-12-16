@@ -1,1 +1,5 @@
-[]
+[
+  { "method": "STC Pay", "account_number": "0500000000", "qr_url": "", "currency": "SAR" },
+  { "method": "Al Rajhi", "account_number": "1234567890123456", "qr_url": "", "currency": "SAR" },
+  { "method": "Vodafone Cash", "account_number": "01000000000", "qr_url": "", "currency": "EGP" }
+]

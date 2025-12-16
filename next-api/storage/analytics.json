@@ -1,1 +1,1 @@
-[]
+[{"id":"a1","type":"page_view","timestamp":"2024-01-01T09:00:00.000Z","meta":{"page":"/"}},{"id":"a2","type":"service_click","timestamp":"2024-01-01T09:05:00.000Z","meta":{"serviceId":"ig-followers"}},{"id":"1765831078206","type":"add_to_cart","serviceId":"fb-likes","meta":{"packageId":"fb-likes-100","serviceId":"fb-likes","units":100,"price":50}},{"id":"1765907908663","type":"add_to_cart","serviceId":"fb-likes","meta":{"packageId":"fb-likes-100","serviceId":"fb-likes","units":100,"price":50}}]

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { ServiceTypeCard } from "@/components/ServiceTypeCard";
-import { Service, Platform, getServicesByPlatform, getPlatformById, initializeStorage } from "@/lib/localStorage";
+import { Service, Platform } from "@/lib/localStorage";
+import { getServices as fetchServices, getPlatforms as fetchPlatforms } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -13,16 +14,18 @@ const PlatformServices = () => {
   const [platform, setPlatform] = useState<Platform | null>(null);
 
   useEffect(() => {
-    initializeStorage();
-    if (platformId) {
-      const platformData = getPlatformById(platformId);
-      if (platformData) {
-        setPlatform(platformData);
-        setServices(getServicesByPlatform(platformId));
-      } else {
-        navigate('/');
-      }
-    }
+    const load = async () => {
+      if (!platformId) return;
+      const platRes = await fetchPlatforms();
+      const platArr = Array.isArray(platRes?.data) ? platRes.data : [];
+      const p = platArr.find((x: any) => x.slug === platformId || x.id === platformId);
+      if (!p) return navigate("/");
+      setPlatform(p as Platform);
+      const svcRes = await fetchServices();
+      const svcArr = Array.isArray(svcRes?.data) ? (svcRes.data as Service[]) : [];
+      setServices(svcArr.filter((s: any) => s.platform === platformId));
+    };
+    load();
   }, [platformId, navigate]);
 
   if (!platform) {
